@@ -15,7 +15,7 @@ the [Arch Wiki](https://wiki.archlinux.org/index.php/Dm-crypt/Drive_preparation#
 Finally, it will create an LVM volume group on the LUKS partiton and add three
 logical volumes (root, home, swap).
 
-This role passes idempotency tests, meaning no changes will occur on
+This role passes idempotency test, meaning no changes will occur on
 additional runs.
 
 The function of this role can be tested with `kitchen-ci` and `vagrant`.
@@ -32,6 +32,9 @@ The following variables are read from other roles and/or the global scope (ie.
 hostvars, group vars, etc.), and are a prerequisite for any changes to occur on
 the targeted host/hosts.
 
+* `lukscrypt_boot_fs` (string) - Default `btrfs`, boot partition file system type
+* `lukscrypt_lv_root_fs` (string) - Default `btrfs`, root partition file system type
+* `lukscrypt_lv_home_fs` (string) - Default `xfs`, home partition file system type
 * `lukscrypt_container` (string) - Default `luks-container`, block device mapper name used while wiping LUKS partition.
 * `lukscrypt_boot_part_size` (string) - Default `2GiB`, size of boot partition, at a minimum this should be `256MiB`.
 * `lukscrypt_efi_part_size` (string) - Default `150MiB`, size of EFI partition.
