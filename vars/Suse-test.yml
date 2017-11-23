@@ -1,0 +1,4 @@
+---
+
+lukscrypt_test_requirements:
+  - qemu-tools

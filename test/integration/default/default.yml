@@ -1,0 +1,19 @@
+---
+
+# This playbook deploys the lukscrypt role for testing.
+
+- hosts: test-kitchen
+  user: root
+  vars:
+    lukscrypt_passphrase: "SecretPassphrase."
+    lukscrypt_test_nbd: nbd10
+    lukscrypt_test_blockdevice: /dev/{{ lukscrypt_test_nbd }}
+    lukscrypt_test_qemuimg_path: /test.qcow2
+    lukscrypt_lv_root_size: 200m
+    lukscrypt_lv_home_size: 200m
+    lukscrypt_lv_swap_size: 100m
+    lukscrypt_vg_name: test
+    lukscrypt_boot_part_size: 100MiB
+    lukscrypt_efi_part_size: 100MiB
+  roles:
+    - ansible-lukscrypt

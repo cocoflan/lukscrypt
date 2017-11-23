@@ -1,0 +1,59 @@
+---
+
+- name: Set Fact | lukscrypt_crypto_LUKS_partition
+  set_fact:
+    lukscrypt_crypto_LUKS_partition: "{{ lukscrypt_blockdevice }}p3"
+  when:
+    - lukscrypt_crypto_LUKS_partition is not defined
+
+- name: Register | lukscrypt_crypto_LUKS_partition_isLuks
+  command: cryptsetup isLuks {{ lukscrypt_crypto_LUKS_partition }}
+  ignore_errors: true
+  register: lukscrypt_crypto_LUKS_partition_isLuks
+  changed_when: false
+
+- name: Register Stat | lukscrypt_container_virtblockdev
+  stat:
+    path: /dev/mapper/luks-container
+  register: lukscrypt_container_virtblockdev
+
+- name: Open luks container with random key
+  command: cryptsetup open --type plain {{ lukscrypt_crypto_LUKS_partition }} luks-container --key-file /dev/urandom
+  when:
+    - lukscrypt_blockdevice is defined
+    - lukscrypt_crypto_LUKS_partition_isLuks.rc == 1
+    - lukscrypt_container_virtblockdev.stat.exists == false
+
+- name: Register | lukscrypt_container_size
+  shell: parted {{ lukscrypt_blockdevice }} unit MiB print  | awk '/^\s/{ if ( $1 == "3") { size=$4; gsub(/MiB/,"",size); print size} }'
+  register: lukscrypt_container_size
+  changed_when: false
+
+- name: Wipe luks container
+  command: dd if=/dev/zero of=/dev/mapper/luks-container bs=1M count={{ lukscrypt_container_size.stdout|int - 1 }} oflag=direct conv=fdatasync
+  when:
+    - lukscrypt_blockdevice is defined
+    - lukscrypt_crypto_LUKS_partition_isLuks.rc == 1
+    - lukscrypt_container_size.stdout|default(0)|int > 1
+
+- name: Update | Register | lukscrypt_container_virtblockdev
+  stat:
+    path: /dev/mapper/luks-container
+  register: lukscrypt_container_virtblockdev
+
+- name: Close luks container with random key
+  command: cryptsetup -q close /dev/mapper/luks-container
+  register: lukscrypt_container_closed
+  when:
+    - lukscrypt_blockdevice is defined
+    - lukscrypt_crypto_LUKS_partition_isLuks.rc == 1 or lukscrypt_container_virtblockdev.stat.exists == true
+
+- name: Format crypto_LUKS partition
+  shell: echo "{{ lukscrypt_passphrase }}" | cryptsetup -q luksFormat {{ lukscrypt_crypto_LUKS_partition }}
+  register: lukscrypt_container_formatted
+  when:
+    - lukscrypt_blockdevice is defined
+    - lukscrypt_crypto_LUKS_partition_isLuks.rc == 1
+
+
+# vim:ft=ansible:

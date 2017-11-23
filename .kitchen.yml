@@ -1,0 +1,40 @@
+---
+driver:
+  name: vagrant
+
+provisioner:
+  # name of the host
+  hosts: test-kitchen
+  # use an ansible playbook to provision our server
+  name: ansible_playbook
+  ansible_verbose: true
+  ansible_verbosity: 4
+  require_ansible_repo: false
+  require_ansible_omnibus: false
+  ansible_version: 2.4.1
+  require_chef_for_busser: false
+  require_chef_for_busser: false
+  sudo_command: sudo -E -H
+  idempotency_test: true
+  sudo: true
+  ansible_extra_flags: "-e '{ kitchen_testrun: True }'"
+  additional_copy_path:
+    - test/custom_pre_install.sh
+    - test/ansible-setup.sh
+  custom_pre_play_command: /tmp/kitchen/custom_pre_install.sh
+
+platforms:
+  - name: openSUSE-Tumbleweed-x86_64
+    driver:
+      box: opensuse/openSUSE-Tumbleweed-x86_64
+
+verifier:
+  name: serverspec
+  sudo_path: true
+
+suites:
+  # suites found at /test/integration/$test-name
+  - name: default
+    verifier:
+      patterns:
+        - roles/ansible-lukscrypt/test/integration/default/serverspec/*_spec.rb

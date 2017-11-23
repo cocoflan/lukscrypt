@@ -1,0 +1,89 @@
+---
+
+- name: Register | lukscrypt_crypto_luks_uuid
+  shell: blkid -o value {{ lukscrypt_crypto_LUKS_partition }} | head -1
+  register: lukscrypt_crypto_luks_uuid
+  changed_when: false
+  when:
+    - lukscrypt_container_formatted.rc|default(1) == 0 or lukscrypt_crypto_LUKS_partition_isLuks.rc == 0
+
+- name: Check whether cr_{{ lukscrypt_crypto_luks_uuid.stdout }} is opened
+  stat:
+    path: /dev/mapper/cr_{{ lukscrypt_crypto_luks_uuid.stdout }}
+  register: lukscrypt_crypto_luks_virtblockdev
+
+  # open only when not already
+- name: Open formatted luks container
+  shell: echo "{{ lukscrypt_passphrase }}" | cryptsetup open {{ lukscrypt_crypto_LUKS_partition }} cr_{{ lukscrypt_crypto_luks_uuid.stdout }}
+  register: lukscrypt_opened_formatted_container
+  when:
+    - lukscrypt_crypto_luks_uuid is defined
+    - lukscrypt_crypto_luks_virtblockdev.stat.exists == false
+
+- name: Register volume group information for vg {{ lukscrypt_vg_name }}
+  command: lvm vgs -S 'vg_name="{{ lukscrypt_vg_name }}"' --noheadings --aligned
+  register: lukscrypt_vg_report_result
+  changed_when: false
+
+- name: Set lukscrypt_vg_report
+  set_fact:
+    lukscrypt_vg_report: "{{ lukscrypt_vg_report_result.stdout_lines }}"
+
+- name: Register logical volume information for {{ lukscrypt_vg_name }}
+  command: lvm lvs -o lv_name,lv_size -S 'vg_name="{{ lukscrypt_vg_name }}"' --noheadings --aligned
+  register: lukscrypt_lv_report_result
+  changed_when: false
+
+
+- name: Create logical volume group on luks
+  lvg:
+    vg: "{{ lukscrypt_vg_name }}"
+    pvs: /dev/mapper/cr_{{ lukscrypt_crypto_luks_uuid.stdout }}
+  register: lukscrypt_vg_on_luks_created
+  when:
+    - lukscrypt_vg_report|length == 0
+
+- name: Set Fact | lukscrypt_lv_root_exists
+  set_fact:
+    lukscrypt_lv_root_exists: True
+  when: item|match("root")
+  with_items: "{{ lukscrypt_lv_report_result.stdout_lines }}"
+
+- name: Create root logical volume on {{ lukscrypt_vg_name }}
+  lvol:
+    vg: "{{ lukscrypt_vg_name }}"
+    lv: root
+    size: "{{ lukscrypt_lv_root_size }}"
+  when:
+    - lukscrypt_lv_root_exists is not defined
+
+- name: Set Fact | lukscrypt_lv_home_exists
+  set_fact:
+    lukscrypt_lv_home_exists: True
+  when: item|match("home")
+  with_items: "{{ lukscrypt_lv_report_result.stdout_lines }}"
+
+- name: Create home logical volume on {{ lukscrypt_vg_name }}
+  lvol:
+    vg: "{{ lukscrypt_vg_name }}"
+    lv: home
+    size: "{{ lukscrypt_lv_home_size }}"
+  when:
+    - lukscrypt_lv_home_exists is not defined
+
+- name: Set Fact | lukscrypt_lv_swap_exists
+  set_fact:
+    lukscrypt_lv_swap_exists: True
+  when: item|match("swap")
+  with_items: "{{ lukscrypt_lv_report_result.stdout_lines }}"
+
+- name: Create swap logical volume on {{ lukscrypt_vg_name }}
+  lvol:
+    vg: "{{ lukscrypt_vg_name }}"
+    lv: swap
+    size: "{{ lukscrypt_lv_swap_size }}"
+  when:
+    - lukscrypt_lv_swap_exists is not defined
+
+
+# vim:ft=ansible:

@@ -1,0 +1,38 @@
+---
+
+- name: Register | lukscrypt_blockdev_p1_fs_type
+  command: blkid -o value -s TYPE /dev/nbd10p1
+  register: lukscrypt_blockdev_p1_fs_type
+  ignore_errors: true
+  changed_when: false
+
+- name: Format EFI partiion
+  command: mkfs.vfat -F32 "{{ lukscrypt_blockdevice }}p1"
+  when: not lukscrypt_blockdev_p1_fs_type.stdout|search("vfat")
+
+- name: Format BOOT partition
+  filesystem:
+    dev: "{{ lukscrypt_blockdevice }}p2"
+    fstype: btrfs
+    opts: -m single
+
+- name: Format lv root
+  filesystem:
+    dev: "/dev/mapper/{{ lukscrypt_vg_name}}-root"
+    fstype: btrfs
+    opts: -m single
+
+- name: Format lv home
+  filesystem:
+    dev: "/dev/mapper/{{ lukscrypt_vg_name }}-home"
+    fstype: xfs
+
+- name: Register | lukscrypt_lv_swap_fs_type
+  command: blkid -o value -s TYPE "/dev/mapper/{{ lukscrypt_vg_name }}-swap"
+  register: lukscrypt_lv_swap_fs_type
+  ignore_errors: true
+  changed_when: false
+
+- name: Format lv swap
+  command: mkswap "/dev/mapper/{{ lukscrypt_vg_name }}-swap"
+  when: not lukscrypt_lv_swap_fs_type.stdout|search("swap")

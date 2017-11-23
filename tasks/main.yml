@@ -1,0 +1,20 @@
+---
+
+# install required packages
+- include_tasks: install-packages.yml
+
+# setup testrun
+- include_tasks: setup-test.yml
+  when: kitchen_testrun|bool
+
+# partition block device
+- include_tasks: setup-partitions.yml
+
+# wipe luks partition with random data and format
+- include_tasks: setup-cryptoLUKS.yml
+
+# setup lvm on LUKS
+- include_tasks: setup-lvm.yml
+
+# format partitions
+- include_tasks: setup-filesystems.yml

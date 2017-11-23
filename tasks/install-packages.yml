@@ -1,0 +1,24 @@
+---
+# installation tasks for lukscrypt
+#
+- name: Import platform dependent variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
+    - "default.yml"
+
+- name: Suse | Refresh repos
+  zypper_repository:
+    repo: '*'
+    runrefresh: yes
+  when: ansible_os_family == "Suse"
+
+- name: Install required packages
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ lukscrypt_requirements }}"
+
+
+# vim: ft=ansible :

@@ -1,0 +1,10 @@
+---
+
+lukscrypt_requirements:
+  - btrfsprogs
+  - cryptsetup
+  - dosfstools
+  - lvm2
+  - parted
+  - util-linux
+  - xfsprogs

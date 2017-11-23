@@ -1,0 +1,88 @@
+---
+
+- name: Register | lukscrypt_dev_partinfo_result | Partition table from luks device
+  command: sfdisk -l {{ lukscrypt_blockdevice }} -J
+  register: lukscrypt_dev_partinfo_result
+  ignore_errors: true
+  changed_when: false
+
+- name: Set Fact | lukscrypt_dev_partinfo
+  set_fact:
+    lukscrypt_dev_partinfo: "{{ lukscrypt_dev_partinfo_result.stdout|from_json }}"
+  when:
+    - lukscrypt_dev_partinfo_result.rc == 0
+
+- name: Set Fact | lukscrypt_dev_label
+  set_fact:
+    lukscrypt_dev_label: "{{ lukscrypt_dev_partinfo.partitiontable['label'] }}"
+  when:
+    - lukscrypt_dev_partinfo_result.rc == 0
+
+- name: Set Fact | lukscrypt_dev_part_count
+  set_fact:
+    lukscrypt_dev_part_count: "{{ lukscrypt_dev_partinfo.partitiontable['partitions'] | length }}"
+  when:
+    - lukscrypt_dev_partinfo_result.rc == 0
+
+- name: Create new GPT disk label
+  command: parted {{ lukscrypt_blockdevice }} mklabel gpt
+  when:
+    - lukscrypt_blockdevice is defined
+    - lukscrypt_dev_partinfo_result.rc == 1 or lukscrypt_dev_label|default("") != "gpt" or lukscrypt_dev_part_count|default(0)|int <= 2
+
+- name: Register | lukscrypt_efi_part_exists
+  shell: parted {{ lukscrypt_blockdevice }} -m print | awk 'BEGIN{FS=":"; count=0} { if ( $6 == "Linux EFI partition" ) { count++ } } END{print count}'
+  register: lukscrypt_efi_part_exists
+  changed_when: false
+
+- name: Add Linux EFI partition
+  shell: "echo ',{{ lukscrypt_efi_part_size }},U,*' | sfdisk --append {{ lukscrypt_blockdevice }}"
+  register: efi_part_create_result
+  when:
+    - lukscrypt_blockdevice is defined
+    - lukscrypt_dev_partinfo_result.rc == 1 or lukscrypt_efi_part_exists.stdout == "0"
+
+- name: Name EFI partition
+  command: sfdisk --append --part-label {{ lukscrypt_blockdevice }} 1 "Linux EFI partition"
+  when:
+    - efi_part_create_result is defined
+    - efi_part_create_result.rc|default(1) != 1
+
+- name: Register | lukscrypt_boot_part_exists
+  shell: parted {{ lukscrypt_blockdevice }} -m print | awk 'BEGIN{FS=":"; count=0} { if ( $6 == "Linux BOOT partition" ) { count++ } } END{print count}'
+  register: lukscrypt_boot_part_exists
+  changed_when: false
+
+- name: Add Linux BOOT partition
+  shell: "echo ',{{ lukscrypt_boot_part_size }}' | sfdisk --append {{ lukscrypt_blockdevice }}"
+  register: boot_part_create_result
+  when:
+    - lukscrypt_blockdevice is defined
+    - lukscrypt_dev_partinfo_result.rc == 1 or lukscrypt_boot_part_exists.stdout == "0"
+
+- name: Name Linux BOOT partition
+  command: sfdisk --append --part-label {{ lukscrypt_blockdevice }} 2 "Linux BOOT partition"
+  when:
+    - boot_part_create_result is defined
+    - boot_part_create_result.rc|default(1) != 1
+
+- name: Register | lukscrypt_crypto_LUKS_part_exists
+  shell: parted {{ lukscrypt_blockdevice }} -m print | awk 'BEGIN{FS=":"; count=0} { if ( $6 == "Linux crypto_LUKS partition" ) { count++ } } END{print count}'
+  register: lukscrypt_crypto_LUKS_part_exists
+  changed_when: false
+
+- name: Add crypto_LUKS partition
+  shell: "echo ',' | sfdisk --append {{ lukscrypt_blockdevice }}"
+  register: lukscrypt_container_part_create_result
+  when:
+    - lukscrypt_blockdevice is defined
+    - lukscrypt_dev_partinfo_result.rc == 1 or lukscrypt_crypto_LUKS_part_exists.stdout == "0"
+
+- name: Name crypto_LUKS partition
+  command: sfdisk --append --part-label {{ lukscrypt_blockdevice }} 3 "Linux crypto_LUKS partition"
+  when:
+    - lukscrypt_container_part_create_result is defined
+    - lukscrypt_container_part_create_result.rc|default(1) != 1
+
+
+# vim:ft=ansible:

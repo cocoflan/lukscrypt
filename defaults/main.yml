@@ -1,0 +1,29 @@
+---
+# defaults file for lukscrypt
+
+lukscrypt_container: luks-container
+
+lukscrypt_boot_part_size: 2GiB
+
+lukscrypt_efi_part_size: 150MiB
+
+lukscrypt_boot_fs: btrfs
+lukscrypt_lv_root_fs: btrfs
+lukscrypt_lv_home_fs: xfs
+
+
+# Required but undefined
+#lukscrypt_passphrase:
+#
+#lukscrypt_blockdevice:
+#
+#lukscrypt_vg_name:
+#
+#lukscrypt_lv_root_size:
+#
+#lukscrypt_lv_home_size:
+#
+#lukscrypt_lv_swap_size:
+
+
+# vim: ft=ansible:

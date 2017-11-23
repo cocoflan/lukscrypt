@@ -1,0 +1,45 @@
+---
+  # setup to test lukscrypt role
+- name: Test Setup | Import platform dependent variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}-test.yml"
+    - "{{ ansible_os_family }}-test.yml"
+    - "default-test.yml"
+
+- name: Test Setup | Install test requirements
+  package:
+    name: "{{ item }}"
+  with_items: "{{ lukscrypt_test_requirements }}"
+
+- name: Test Setup | Probe nbd module
+  modprobe:
+    name: nbd
+    params: 'max_part=4'
+    state: present
+
+- name: Test Setup | Set Fact | lukscrypt_blockdevice
+  set_fact:
+    lukscrypt_blockdevice: "{{ lukscrypt_test_blockdevice }}"
+  when:
+    - lukscrypt_blockdevice is not defined
+
+- name: Test Setup | Register | lukscrypt_test_qemuimg info
+  stat:
+    path: "{{ lukscrypt_test_qemuimg_path }}"
+  register: lukscrypt_test_qemuimg
+
+- name: Test Setup | Register | qemu_nbd_lock
+  stat:
+    path: /run/lock/qemu-nbd-{{ lukscrypt_test_nbd }}
+  register: qemu_nbd_lock
+
+- name: Test Setup | Setup qemu hdd device for test run
+  command: qemu-img create -f qcow2 {{ lukscrypt_test_qemuimg_path }} 1G
+  args:
+    creates: "{{ lukscrypt_test_qemuimg_path }}"
+
+- name: Test Setup | Connect test qemu-nbd block device
+  command: qemu-nbd -c {{ lukscrypt_test_blockdevice }} {{ lukscrypt_test_qemuimg_path }}
+  when:
+    - qemu_nbd_lock.stat.exists == false
