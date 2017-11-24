@@ -7,17 +7,33 @@
   when:
     - lukscrypt_container_formatted.rc|default(1) == 0 or lukscrypt_crypto_LUKS_partition_isLuks.rc == 0
 
-- name: Check whether cr_{{ lukscrypt_crypto_luks_uuid.stdout }} is opened
+- name: Set Fact | lukscrypt_crypto_luks_virtblockdev_name
+  set_fact:
+    lukscrypt_crypto_luks_virtblockdev_name: cr_{{ lukscrypt_blockdev_tran }}-{{ lukscrypt_blockdev_model }}_{{ lukscrypt_blockdev_serial }}-part3
+  when:
+    - lukscrypt_blockdev_serial|default("") != ""
+    - lukscrypt_blockdev_tran|default("") != ""
+    - lukscrypt_blockdev_model|default("") != ""
+
+- name: Set Fact | lukscrypt_crypto_luks_virtblockdev_name
+  set_fact:
+    lukscrypt_crypto_luks_virtblockdev_name: cr_{{ lukscrypt_crypto_luks_uuid.stdout }}
+  when:
+    - lukscrypt_blockdev_serial|default("") == ""
+    - lukscrypt_blockdev_tran|default("") == ""
+    - lukscrypt_blockdev_model|default("") == ""
+
+- name: Check whether {{ lukscrypt_crypto_luks_virtblockdev_name }} is opened
   stat:
-    path: /dev/mapper/cr_{{ lukscrypt_crypto_luks_uuid.stdout }}
+    path: /dev/mapper/{{ lukscrypt_crypto_luks_virtblockdev_name }}
   register: lukscrypt_crypto_luks_virtblockdev
 
   # open only when not already
 - name: Open formatted luks container
-  shell: echo "{{ lukscrypt_passphrase }}" | cryptsetup open {{ lukscrypt_crypto_LUKS_partition }} cr_{{ lukscrypt_crypto_luks_uuid.stdout }}
+  shell: echo "{{ lukscrypt_passphrase }}" | cryptsetup open {{ lukscrypt_crypto_LUKS_partition }} {{ lukscrypt_crypto_luks_virtblockdev_name }}
   register: lukscrypt_opened_formatted_container
   when:
-    - lukscrypt_crypto_luks_uuid is defined
+    - lukscrypt_crypto_luks_virtblock_name is defined
     - lukscrypt_crypto_luks_virtblockdev.stat.exists == false
 
 - name: Register volume group information for vg {{ lukscrypt_vg_name }}

@@ -39,7 +39,7 @@ the targeted host/hosts.
 * `lukscrypt_boot_part_size` (string) - Default `2GiB`, size of boot partition, at a minimum this should be `256MiB`.
 * `lukscrypt_efi_part_size` (string) - Default `150MiB`, size of EFI partition.
 * `lukscrypt_passphrase` (string) - Passphrase used to secure LUKS partition, `:` should be avoided.
-* `lukscrypt_blockdevice` (string) - Block device that will potentially have all data destroyed.
+* `lukscrypt_blockdev` (string) - Block device that will potentially have all data destroyed.
 * `lukscrypt_vg_name` (string) - LVM volume group name.
 * `lukscrypt_lv_root_size` (string) - Size of root logical volume (i.e. 200m)
 * `lukscrypt_lv_home_size` (string) - Size of home logical volume (i.e. 200m)
@@ -56,15 +56,33 @@ Example Playbook
   become_method: sudo
   vars:
     lukscrypt_passphrase: "SecretPassphrase."
-    lukscrypt_blockdevice: /dev/sdb
     lukscrypt_boot_part_size: 100MiB
     lukscrypt_efi_part_size: 100MiB
     lukscrypt_vg_name: ryzen-system
     lukscrypt_lv_root_size: 200m
     lukscrypt_lv_home_size: 200m
     lukscrypt_lv_swap_size: 100m
-  roles:
-    - ansible-lukscrypt
+    blockdev_serial: S3EUNX0J500227A
+  tasks:
+    - name: Register | lukscrypt_all_blockdev_info_results
+      command: lsblk -d -i -J --output NAME,TYPE,SERIAL,MODEL,TRAN
+      register: lukscrypt_all_blockdev_info_results
+      changed_when: false
+
+    - name: Set Fact | lukscrypt_all_blockdev_info
+      set_fact:
+        lukscrypt_all_blockdev_info: "{{ lukscrypt_all_blockdev_info_results.stdout|from_json }}"
+
+    - name: Set Fact | lukscrypt_blockdev | serach by serial
+      set_fact:
+        lukscrypt_blockdev: /dev/{{ item.name }}
+      when: item.serial|search(blockdev_serial)
+      with_items: "{{ lukscrypt_all_blockdev_info.blockdevices }}"
+
+    - name: Setup lvm on LUKS
+      include_role:
+        name: ansible-lukscrypt
+      when: lukscrypt_blockdev is defined
 
 ```
 

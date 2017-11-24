@@ -15,7 +15,7 @@ lukscrypt_lv_home_fs: xfs
 # Required but undefined
 #lukscrypt_passphrase:
 #
-#lukscrypt_blockdevice:
+#lukscrypt_blockdev:
 #
 #lukscrypt_vg_name:
 #

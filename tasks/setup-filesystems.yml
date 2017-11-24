@@ -7,12 +7,12 @@
   changed_when: false
 
 - name: Format EFI partiion
-  command: mkfs.vfat -F32 "{{ lukscrypt_blockdevice }}p1"
+  command: mkfs.vfat -F32 "{{ lukscrypt_blockdev }}p1"
   when: not lukscrypt_blockdev_p1_fs_type.stdout|search("vfat")
 
 - name: Format BOOT partition
   filesystem:
-    dev: "{{ lukscrypt_blockdevice }}p2"
+    dev: "{{ lukscrypt_blockdev }}p2"
     fstype: btrfs
     opts: -m single
 

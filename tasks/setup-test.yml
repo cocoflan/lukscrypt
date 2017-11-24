@@ -18,11 +18,11 @@
     params: 'max_part=4'
     state: present
 
-- name: Test Setup | Set Fact | lukscrypt_blockdevice
+- name: Test Setup | Set Fact | lukscrypt_blockdev
   set_fact:
-    lukscrypt_blockdevice: "{{ lukscrypt_test_blockdevice }}"
+    lukscrypt_blockdev: "{{ lukscrypt_test_blockdev }}"
   when:
-    - lukscrypt_blockdevice is not defined
+    - lukscrypt_blockdev is not defined
 
 - name: Test Setup | Register | lukscrypt_test_qemuimg info
   stat:
@@ -40,6 +40,6 @@
     creates: "{{ lukscrypt_test_qemuimg_path }}"
 
 - name: Test Setup | Connect test qemu-nbd block device
-  command: qemu-nbd -c {{ lukscrypt_test_blockdevice }} {{ lukscrypt_test_qemuimg_path }}
+  command: qemu-nbd -c {{ lukscrypt_test_blockdev }} {{ lukscrypt_test_qemuimg_path }}
   when:
     - qemu_nbd_lock.stat.exists == false
