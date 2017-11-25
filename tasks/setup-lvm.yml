@@ -1,9 +1,15 @@
 ---
 
-- name: Register | lukscrypt_crypto_luks_uuid
+- name: Register | lukscrypt_crypto_luks_uuid_result
   shell: blkid -o value {{ lukscrypt_crypto_LUKS_partition }} | head -1
-  register: lukscrypt_crypto_luks_uuid
+  register: lukscrypt_crypto_luks_uuid_result
   changed_when: false
+  when:
+    - lukscrypt_container_formatted.rc|default(1) == 0 or lukscrypt_crypto_LUKS_partition_isLuks.rc == 0
+
+- name: Set Fact | lukscrypt_crypto_luks_uuid
+  set_fact:
+    lukscrypt_crypto_luks_uuid: lukscrypt_crypto_luks_uuid_result.stdout
   when:
     - lukscrypt_container_formatted.rc|default(1) == 0 or lukscrypt_crypto_LUKS_partition_isLuks.rc == 0
 
@@ -17,7 +23,7 @@
 
 - name: Set Fact | lukscrypt_crypto_luks_virtblockdev_name
   set_fact:
-    lukscrypt_crypto_luks_virtblockdev_name: cr_{{ lukscrypt_crypto_luks_uuid.stdout }}
+    lukscrypt_crypto_luks_virtblockdev_name: cr_{{ lukscrypt_crypto_luks_uuid }}
   when:
     - lukscrypt_blockdev_serial|default("") == ""
     - lukscrypt_blockdev_tran|default("") == ""
@@ -54,7 +60,7 @@
 - name: Create logical volume group on luks
   lvg:
     vg: "{{ lukscrypt_vg_name }}"
-    pvs: /dev/mapper/cr_{{ lukscrypt_crypto_luks_uuid.stdout }}
+    pvs: /dev/mapper/{{ lukscrypt_crypto_luks_virtblockdev_name }}
   register: lukscrypt_vg_on_luks_created
   when:
     - lukscrypt_vg_report|length == 0
