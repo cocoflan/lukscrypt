@@ -46,7 +46,7 @@
     - lukscrypt_dev_partinfo_result.rc == 0
 
 - name: Create new GPT disk label
-  command: parted {{ lukscrypt_blockdev }} mklabel gpt
+  command: parted -s {{ lukscrypt_blockdev }} mklabel gpt
   when:
     - lukscrypt_blockdev is defined
     - lukscrypt_dev_partinfo_result.rc == 1 or lukscrypt_dev_label|default("") != "gpt" or lukscrypt_dev_part_count|default(0)|int <= 2
