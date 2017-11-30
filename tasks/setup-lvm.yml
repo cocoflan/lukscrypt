@@ -17,18 +17,18 @@
   set_fact:
     lukscrypt_crypto_luks_virtblockdev_name: cr_{{ lukscrypt_blockdev_tran }}-{{ lukscrypt_blockdev_model }}_{{ lukscrypt_blockdev_serial }}-part3
   when:
-    - lukscrypt_blockdev_serial|default("") != ""
-    - lukscrypt_blockdev_tran|default("") != ""
-    - lukscrypt_blockdev_model|default("") != ""
+    - lukscrypt_blockdev_serial|default("") != "None"
+    - lukscrypt_blockdev_tran|default("") != "None"
+    - lukscrypt_blockdev_model|default("") != "None"
     - lukscrypt_crypto_luks_virtblockdev_name is not defined
 
 - name: Set Fact | lukscrypt_crypto_luks_virtblockdev_name
   set_fact:
     lukscrypt_crypto_luks_virtblockdev_name: cr_{{ lukscrypt_crypto_luks_uuid }}
   when:
-    - lukscrypt_blockdev_serial|default("") == ""
-    - lukscrypt_blockdev_tran|default("") == ""
-    - lukscrypt_blockdev_model|default("") == ""
+    - lukscrypt_blockdev_serial|default("") == "None"
+    - lukscrypt_blockdev_tran|default("") == "None"
+    - lukscrypt_blockdev_model|default("") == "None"
     - lukscrypt_crypto_luks_virtblockdev_name is not defined
 
 - name: Check whether {{ lukscrypt_crypto_luks_virtblockdev_name }} is opened
@@ -41,7 +41,7 @@
   shell: echo "{{ lukscrypt_passphrase }}" | cryptsetup open {{ lukscrypt_crypto_LUKS_partition }} {{ lukscrypt_crypto_luks_virtblockdev_name }}
   register: lukscrypt_opened_formatted_container
   when:
-    - lukscrypt_crypto_luks_virtblock_name is defined
+    - lukscrypt_crypto_luks_virtblockdev_name is defined
     - lukscrypt_crypto_luks_virtblockdev.stat.exists == false
 
 - name: Register volume group information for vg {{ lukscrypt_vg_name }}

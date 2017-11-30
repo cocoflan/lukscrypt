@@ -11,8 +11,8 @@ if [[ "${ID}" == "opensuse" ]]; then
     patterns-devel-C-C++-devel_C_C++ \
     python-devel \
     python-pip \
-    python-setuptools \
-    "rubygem(bundler)"
+    python-setuptools
+  sudo bash -lc 'zypper install -y "rubygem(bundler)"'
   sudo ln -sf /usr/bin/pip2 /usr/bin/pip
 fi
 

@@ -1,18 +1,32 @@
 ---
 
+- name: Register | lukscrypt_blockdev_part1
+  shell: lsblk -l -n -o NAME {{ lukscrypt_blockdev }} | grep -e '.*1$'
+  register: lukscrypt_blockdev_part1
+  changed_when: false
+
 - name: Register | lukscrypt_blockdev_p1_fs_type
-  command: blkid -o value -s TYPE /dev/nbd10p1
+  command: blkid -o value -s TYPE  /dev/{{ lukscrypt_blockdev_part1.stdout }}
   register: lukscrypt_blockdev_p1_fs_type
   ignore_errors: true
+  when:
+    - lukscrypt_blockdev_part1.stdout != ""
   changed_when: false
 
 - name: Format EFI partiion
-  command: mkfs.vfat -F32 "{{ lukscrypt_blockdev }}p1"
-  when: not lukscrypt_blockdev_p1_fs_type.stdout|search("vfat")
+  command: mkfs.vfat -F32 "/dev/{{ lukscrypt_blockdev_part1.stdout }}"
+  when:
+    - not lukscrypt_blockdev_p1_fs_type.stdout|search("vfat")
+    - lukscrypt_blockdev_part1.stdout != ""
+
+- name: Register | lukscrypt_blockdev_part2
+  shell: lsblk -l -n -o NAME {{ lukscrypt_blockdev }} | grep -e '.*2$'
+  register: lukscrypt_blockdev_part2
+  changed_when: false
 
 - name: Format BOOT partition
   filesystem:
-    dev: "{{ lukscrypt_blockdev }}p2"
+    dev: "/dev/{{ lukscrypt_blockdev_part2.stdout }}"
     fstype: btrfs
     opts: -m single
 
