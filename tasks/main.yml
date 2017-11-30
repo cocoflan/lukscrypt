@@ -5,7 +5,7 @@
 
 # setup testrun
 - include_tasks: setup-test.yml
-  when: kitchen_testrun|bool
+  when: kitchen_testrun|default(false)
 
 # partition block device
 - include_tasks: setup-partitions.yml
