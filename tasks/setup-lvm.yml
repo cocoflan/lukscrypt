@@ -20,6 +20,7 @@
     - lukscrypt_blockdev_serial|default("") != ""
     - lukscrypt_blockdev_tran|default("") != ""
     - lukscrypt_blockdev_model|default("") != ""
+    - lukscrypt_crypto_luks_virtblockdev_name is not defined
 
 - name: Set Fact | lukscrypt_crypto_luks_virtblockdev_name
   set_fact:
@@ -28,6 +29,7 @@
     - lukscrypt_blockdev_serial|default("") == ""
     - lukscrypt_blockdev_tran|default("") == ""
     - lukscrypt_blockdev_model|default("") == ""
+    - lukscrypt_crypto_luks_virtblockdev_name is not defined
 
 - name: Check whether {{ lukscrypt_crypto_luks_virtblockdev_name }} is opened
   stat:
