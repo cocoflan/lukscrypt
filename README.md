@@ -86,6 +86,37 @@ Example Playbook
 
 ```
 
+```yaml
+---
+- hosts: localhost
+  become: true
+  become_method: sudo
+  vars:
+    lukscrypt_passphrase: "SecretPassphrase."
+    lukscrypt_boot_part_size: 100MiB
+    lukscrypt_efi_part_size: 100MiB
+    lukscrypt_vg_name: ryzen-system
+    lukscrypt_lv_root_size: 200m
+    lukscrypt_lv_home_size: 200m
+    lukscrypt_lv_swap_size: 100m
+    blockdev_serial: S3EUNX0J500227A
+  tasks:
+    - name: Register | blkdev_search_result | serach by serial
+      shell: for blk_dev in $(lsblk -d -n --output NAME); do smartctl -i /dev/$blk_dev | awk -v blk_dev="$blk_dev" -v userial={{ blkdev_serial }} 'BEGIN { FS=":" } $2 ~ userial { print blk_dev; }'; done
+      register: blkdev_search_result
+      change_when: false
+
+    - name: Set Fact | lukscrypt_blockdev
+      set_fact:
+        lukscrypt_blockdev: /dev/{{ blkdev_search_result.stdout }}
+      when: blkdev_search_result is defined
+
+    - name: Setup lvm on LUKS
+      include_role:
+        name: ansible-lukscrypt
+      when: lukscrypt_blockdev is defined
+```
+
 License
 -------
 
