@@ -9,7 +9,7 @@
 
 - name: Set Fact | lukscrypt_crypto_luks_uuid
   set_fact:
-    lukscrypt_crypto_luks_uuid: lukscrypt_crypto_luks_uuid_result.stdout
+    lukscrypt_crypto_luks_uuid: "{{ lukscrypt_crypto_luks_uuid_result.stdout }}"
   when:
     - lukscrypt_container_formatted.rc|default(1) == 0 or lukscrypt_crypto_LUKS_partition_isLuks.rc == 0
 
