@@ -17,10 +17,15 @@
   register: lukscrypt_crypto_LUKS_partition_isLuks
   changed_when: false
 
-- name: Register Stat | lukscrypt_container_virtblockdev
+- name: Register | lukscrypt_container_virtblockdev
   stat:
     path: /dev/mapper/luks-container
   register: lukscrypt_container_virtblockdev
+
+- name: Register | lukscrypt_container_size
+  shell: parted {{ lukscrypt_blockdev }} unit MiB print  | awk '/^\s/{ if ( $1 == "3") { size=$4; gsub(/MiB/,"",size); print size} }'
+  register: lukscrypt_container_size
+  changed_when: false
 
 - name: Open luks container with random key
   command: cryptsetup open --type plain {{ lukscrypt_crypto_LUKS_partition }} luks-container --key-file /dev/urandom
@@ -28,11 +33,7 @@
     - lukscrypt_blockdev is defined
     - lukscrypt_crypto_LUKS_partition_isLuks.rc == 1
     - lukscrypt_container_virtblockdev.stat.exists == false
-
-- name: Register | lukscrypt_container_size
-  shell: parted {{ lukscrypt_blockdev }} unit MiB print  | awk '/^\s/{ if ( $1 == "3") { size=$4; gsub(/MiB/,"",size); print size} }'
-  register: lukscrypt_container_size
-  changed_when: false
+    - lukscrypt_wipe_luks_blockdev
 
 - name: Wipe luks container
   command: dd if=/dev/zero of=/dev/mapper/luks-container bs=1M count={{ lukscrypt_container_size.stdout|int - 1 }} oflag=direct conv=fdatasync
@@ -40,6 +41,7 @@
     - lukscrypt_blockdev is defined
     - lukscrypt_crypto_LUKS_partition_isLuks.rc == 1
     - lukscrypt_container_size.stdout|default(0)|int > 1
+    - lukscrypt_wipe_luks_blockdev
 
 - name: Update | Register | lukscrypt_container_virtblockdev
   stat:

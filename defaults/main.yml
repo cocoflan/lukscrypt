@@ -1,6 +1,7 @@
 ---
 # defaults file for lukscrypt
 
+lukscrypt_wipe_luks_blockdev: true
 lukscrypt_container: luks-container
 
 lukscrypt_boot_part_size: 2GiB
