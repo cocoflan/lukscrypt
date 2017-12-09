@@ -1,13 +1,13 @@
 ---
 
 - name: Register | lukscrypt_blockdev_part3
-  shell: lsblk -l -n -o NAME {{ lukscrypt_blockdev }} | grep -e '.*3$'
+  shell: sfdisk -l {{ lukscrypt_blockdev }} | awk '/^\/dev/{ if ( $1 ~ /.*3$/) { print $1 } }'
   register: lukscrypt_blockdev_part3
   changed_when: false
 
 - name: Set Fact | lukscrypt_crypto_LUKS_partition
   set_fact:
-    lukscrypt_crypto_LUKS_partition: "/dev/{{ lukscrypt_blockdev_part3.stdout }}"
+    lukscrypt_crypto_LUKS_partition: "{{ lukscrypt_blockdev_part3.stdout }}"
   when:
     - lukscrypt_crypto_LUKS_partition is not defined
 
