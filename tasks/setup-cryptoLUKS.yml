@@ -54,6 +54,7 @@
   when:
     - lukscrypt_blockdev is defined
     - lukscrypt_crypto_LUKS_partition_isLuks.rc == 1 or lukscrypt_container_virtblockdev.stat.exists == true
+    - lukscrypt_wipe_luks_blkdev
 
 - name: Format crypto_LUKS partition
   shell: echo "{{ lukscrypt_passphrase }}" | cryptsetup -q luksFormat {{ lukscrypt_crypto_LUKS_partition }}
