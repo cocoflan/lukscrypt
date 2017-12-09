@@ -29,6 +29,7 @@
 
 - name: Open luks container with random key
   command: cryptsetup open --type plain {{ lukscrypt_crypto_LUKS_partition }} luks-container --key-file /dev/urandom
+  register: lukscrypt_open_container_with_random
   when:
     - lukscrypt_blockdev is defined
     - lukscrypt_crypto_LUKS_partition_isLuks.rc == 1
@@ -54,7 +55,7 @@
   when:
     - lukscrypt_blockdev is defined
     - lukscrypt_crypto_LUKS_partition_isLuks.rc == 1 or lukscrypt_container_virtblockdev.stat.exists == true
-    - lukscrypt_wipe_luks_blkdev
+    - not lukscrypt_open_container_with_random|skipped
 
 - name: Format crypto_LUKS partition
   shell: echo "{{ lukscrypt_passphrase }}" | cryptsetup -q luksFormat {{ lukscrypt_crypto_LUKS_partition }}
