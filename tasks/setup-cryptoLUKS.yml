@@ -33,7 +33,7 @@
     - lukscrypt_blockdev is defined
     - lukscrypt_crypto_LUKS_partition_isLuks.rc == 1
     - lukscrypt_container_virtblockdev.stat.exists == false
-    - lukscrypt_wipe_luks_blockdev
+    - lukscrypt_wipe_luks_blkdev
 
 - name: Wipe luks container
   command: dd if=/dev/zero of=/dev/mapper/luks-container bs=1M count={{ lukscrypt_container_size.stdout|int - 1 }} oflag=direct conv=fdatasync
@@ -41,7 +41,7 @@
     - lukscrypt_blockdev is defined
     - lukscrypt_crypto_LUKS_partition_isLuks.rc == 1
     - lukscrypt_container_size.stdout|default(0)|int > 1
-    - lukscrypt_wipe_luks_blockdev
+    - lukscrypt_wipe_luks_blkdev
 
 - name: Update | Register | lukscrypt_container_virtblockdev
   stat:
