@@ -69,6 +69,10 @@
     - efi_part_create_result is defined
     - efi_part_create_result.rc|default(1) != 1
 
+- name: Wait for partition creation to finish
+  command: sync
+  changed_when: false
+
 - name: Register | lukscrypt_boot_part_exists
   shell: parted {{ lukscrypt_blockdev }} -m print | awk 'BEGIN{FS=":"; count=0} { if ( $6 == "Linux BOOT partition" ) { count++ } } END{print count}'
   register: lukscrypt_boot_part_exists
@@ -87,6 +91,10 @@
     - boot_part_create_result is defined
     - boot_part_create_result.rc|default(1) != 1
 
+- name: Wait for partition creation to finish
+  command: sync
+  changed_when: false
+
 - name: Register | lukscrypt_crypto_LUKS_part_exists
   shell: parted {{ lukscrypt_blockdev }} -m print | awk 'BEGIN{FS=":"; count=0} { if ( $6 == "Linux crypto_LUKS partition" ) { count++ } } END{print count}'
   register: lukscrypt_crypto_LUKS_part_exists
@@ -104,6 +112,10 @@
   when:
     - lukscrypt_container_part_create_result is defined
     - lukscrypt_container_part_create_result.rc|default(1) != 1
+
+- name: Wait for partition creation to finish
+  command: sync
+  changed_when: false
 
 
 # vim:ft=ansible:
